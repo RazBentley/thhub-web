@@ -9,10 +9,7 @@ import {
   UserPlus,
   FileText,
   TrendingUp,
-  Check,
-  Smartphone,
   Droplets,
-  Camera,
   HeartPulse,
 } from "lucide-react";
 
@@ -27,6 +24,7 @@ function InstagramIcon({ size = 16, className }: { size?: number; className?: st
 }
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { PricingSection } from "@/components/landing/PricingSection";
 
 const features = [
   {
@@ -91,17 +89,6 @@ const steps = [
   },
 ];
 
-const included = [
-  "Personalised meal plan with macros",
-  "Custom workout programme",
-  "Weekly check-ins with your coach",
-  "Direct messaging support",
-  "Nutrition & food logging tools",
-  "Cardio & activity tracking",
-  "Progress photo tracking",
-  "Goal setting & accountability",
-  "Full access to web & mobile app",
-];
 
 export default function HomePage() {
   return (
@@ -285,56 +272,7 @@ export default function HomePage() {
       </section>
 
       {/* Pricing */}
-      <section className="border-t border-border bg-surface px-4 py-24">
-        <div className="mx-auto max-w-3xl">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
-              Simple, <span className="text-primary">Transparent</span> Pricing
-            </h2>
-            <p className="mx-auto max-w-2xl text-text-secondary">
-              One plan. Everything included. No hidden fees.
-            </p>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-accent p-px">
-            <div className="rounded-2xl bg-bg p-8 sm:p-10">
-              <div className="mb-8 text-center">
-                <div className="mb-2 text-sm font-bold uppercase tracking-wide text-accent">
-                  Monthly Coaching
-                </div>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-5xl font-extrabold text-text">
-                    &pound;50
-                  </span>
-                  <span className="text-lg text-text-secondary">/month</span>
-                </div>
-                <p className="mt-2 text-text-secondary">
-                  Payment via bank transfer or cash
-                </p>
-              </div>
-
-              <div className="mb-8 space-y-3">
-                {included.map((item) => (
-                  <div key={item} className="flex items-center gap-3">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/20">
-                      <Check size={12} className="text-success" />
-                    </div>
-                    <span className="text-text-secondary">{item}</span>
-                  </div>
-                ))}
-              </div>
-
-              <Link
-                href="/register"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-4 text-lg font-semibold text-white transition-all hover:bg-primary-dark active:scale-[0.98]"
-              >
-                Get Started Now
-                <ArrowRight size={20} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PricingSection />
 
       {/* Get the App */}
       <section className="px-4 py-24">
