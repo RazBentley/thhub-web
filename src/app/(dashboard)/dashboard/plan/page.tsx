@@ -28,6 +28,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import clsx from "clsx";
+import { RequireActive } from "@/components/ui/RequireActive";
 
 const WATER_INCREMENT = 0.5;
 
@@ -197,13 +198,15 @@ export default function MyPlanPage() {
 
   if (!mealPlan) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <UtensilsCrossed size={64} className="mb-4 text-text-muted" />
-        <h2 className="text-xl font-bold text-text">No Meal Plan Yet</h2>
-        <p className="mt-1 text-text-secondary">
-          Your coach will set your personalised plan soon
-        </p>
-      </div>
+      <RequireActive>
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <UtensilsCrossed size={64} className="mb-4 text-text-muted" />
+          <h2 className="text-xl font-bold text-text">No Meal Plan Yet</h2>
+          <p className="mt-1 text-text-secondary">
+            Your coach will set your personalised plan soon
+          </p>
+        </div>
+      </RequireActive>
     );
   }
 
@@ -232,6 +235,7 @@ export default function MyPlanPage() {
   const standaloneExtras = extras.filter((e) => e.mealLabel === "extra");
 
   return (
+    <RequireActive>
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">My Plan</h1>
 
@@ -664,5 +668,6 @@ export default function MyPlanPage() {
         </div>
       )}
     </div>
+    </RequireActive>
   );
 }

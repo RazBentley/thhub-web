@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { MealPlan, DailyProgress, NutritionTargets, FoodEntry, UserProfile } from "@/types";
+import { InactiveGate } from "@/components/ui/InactiveGate";
 import {
   Users,
   UtensilsCrossed,
@@ -54,6 +55,7 @@ export default function DashboardPage() {
   const quickActions = isOwner ? coachQuickActions : clientQuickActions;
 
   return (
+    <InactiveGate>
     <div className="space-y-8">
       {/* Welcome */}
       <div>
@@ -97,6 +99,7 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </InactiveGate>
   );
 }
 

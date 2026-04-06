@@ -17,6 +17,7 @@ import { DailyCardio } from "@/types";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { HeartPulse, Footprints, Save } from "lucide-react";
 import clsx from "clsx";
+import { RequireActive } from "@/components/ui/RequireActive";
 
 const CARDIO_TYPES = [
   "Walking",
@@ -110,6 +111,7 @@ export default function CardioPage() {
       : 0;
 
   return (
+    <RequireActive>
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">Cardio & Steps</h1>
 
@@ -224,5 +226,6 @@ export default function CardioPage() {
         </div>
       )}
     </div>
+    </RequireActive>
   );
 }

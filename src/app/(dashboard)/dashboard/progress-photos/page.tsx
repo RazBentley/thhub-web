@@ -8,6 +8,7 @@ import { db, storage } from "@/lib/firebase";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Camera, Upload, Image as ImageIcon } from "lucide-react";
 import clsx from "clsx";
+import { RequireActive } from "@/components/ui/RequireActive";
 
 interface ProgressPhoto {
   date: string;
@@ -75,6 +76,7 @@ export default function ProgressPhotosPage() {
   const todayPhotos = photos.find((p) => p.date === today);
 
   return (
+    <RequireActive>
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">Progress Photos</h1>
 
@@ -177,5 +179,6 @@ export default function ProgressPhotosPage() {
         </div>
       )}
     </div>
+    </RequireActive>
   );
 }

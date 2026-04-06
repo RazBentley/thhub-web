@@ -8,6 +8,7 @@ import { db, storage } from "@/lib/firebase";
 import { WeeklyCheckIn } from "@/types";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ClipboardCheck, Send, Upload, Camera, X } from "lucide-react";
+import { RequireActive } from "@/components/ui/RequireActive";
 
 function getWeekId(): string {
   const now = new Date();
@@ -141,13 +142,15 @@ export default function CheckInPage() {
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <ClipboardCheck size={64} className="mb-4 text-success" />
-        <h2 className="text-2xl font-bold text-text">Check-in Submitted!</h2>
-        <p className="mt-2 text-text-secondary">
-          Your coach will review your progress soon.
-        </p>
-      </div>
+      <RequireActive>
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <ClipboardCheck size={64} className="mb-4 text-success" />
+          <h2 className="text-2xl font-bold text-text">Check-in Submitted!</h2>
+          <p className="mt-2 text-text-secondary">
+            Your coach will review your progress soon.
+          </p>
+        </div>
+      </RequireActive>
     );
   }
 
@@ -190,6 +193,7 @@ export default function CheckInPage() {
     );
 
   return (
+    <RequireActive>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-text">Weekly Check-in</h1>
@@ -378,5 +382,6 @@ export default function CheckInPage() {
             : "Submit Check-in"}
       </button>
     </div>
+    </RequireActive>
   );
 }

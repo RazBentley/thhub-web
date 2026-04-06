@@ -22,6 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 import clsx from "clsx";
+import { RequireActive } from "@/components/ui/RequireActive";
 
 export default function NutritionPage() {
   const { profile } = useAuth();
@@ -163,6 +164,7 @@ export default function NutritionPage() {
   };
 
   return (
+    <RequireActive>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-text">Nutrition</h1>
@@ -402,5 +404,6 @@ export default function NutritionPage() {
         </div>
       )}
     </div>
+    </RequireActive>
   );
 }

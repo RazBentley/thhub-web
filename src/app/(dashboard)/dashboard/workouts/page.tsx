@@ -8,6 +8,7 @@ import { WorkoutProgramme, WorkoutProgress, ExerciseLog } from "@/types";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Dumbbell, Play, Check, Clock, CheckCircle, Weight } from "lucide-react";
 import clsx from "clsx";
+import { RequireActive } from "@/components/ui/RequireActive";
 
 export default function WorkoutsPage() {
   const { profile } = useAuth();
@@ -100,13 +101,15 @@ export default function WorkoutsPage() {
 
   if (!programme) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-center">
-        <Dumbbell size={64} className="mb-4 text-text-muted" />
-        <h2 className="text-xl font-bold text-text">No Programme Yet</h2>
-        <p className="mt-1 text-text-secondary">
-          Your coach will set your workout programme soon
-        </p>
-      </div>
+      <RequireActive>
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <Dumbbell size={64} className="mb-4 text-text-muted" />
+          <h2 className="text-xl font-bold text-text">No Programme Yet</h2>
+          <p className="mt-1 text-text-secondary">
+            Your coach will set your workout programme soon
+          </p>
+        </div>
+      </RequireActive>
     );
   }
 
@@ -120,6 +123,7 @@ export default function WorkoutsPage() {
     totalExercises > 0 ? (completedCount / totalExercises) * 100 : 0;
 
   return (
+    <RequireActive>
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">{programme.name}</h1>
 
@@ -299,5 +303,6 @@ export default function WorkoutsPage() {
         </div>
       )}
     </div>
+    </RequireActive>
   );
 }

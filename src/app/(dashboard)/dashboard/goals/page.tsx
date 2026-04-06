@@ -8,6 +8,7 @@ import { WeightGoal } from "@/types";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Target, Save, TrendingDown } from "lucide-react";
 import clsx from "clsx";
+import { RequireActive } from "@/components/ui/RequireActive";
 
 export default function GoalsPage() {
   const { profile } = useAuth();
@@ -100,6 +101,7 @@ export default function GoalsPage() {
     : 0;
 
   return (
+    <RequireActive>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-text">Goals</h1>
@@ -259,5 +261,6 @@ export default function GoalsPage() {
         </>
       ) : null}
     </div>
+    </RequireActive>
   );
 }
