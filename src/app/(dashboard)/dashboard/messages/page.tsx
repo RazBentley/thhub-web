@@ -111,18 +111,10 @@ export default function MessagesPage() {
       const snap = await getDocs(
         query(collection(db, "users"), where("role", "==", "client"))
       );
-      const clients = snap.docs
+      const allClients = snap.docs
         .map((d) => d.data() as UserProfile)
         .sort((a, b) => a.name.localeCompare(b.name));
-
-      // Filter out clients who already have a chat
-      const existingParticipants = new Set(
-        chats.flatMap((c) => c.participants)
-      );
-      const available = clients.filter(
-        (c) => !existingParticipants.has(c.uid)
-      );
-      setAvailableUsers(available);
+      setAvailableUsers(allClients);
     } catch {
       /* silent */
     } finally {
@@ -134,6 +126,17 @@ export default function MessagesPage() {
     if (!profile) return;
     setCreatingChat(true);
     try {
+      // Check if a chat already exists with this client
+      const existingChat = chats.find((c) =>
+        c.participants.includes(client.uid)
+      );
+      if (existingChat) {
+        setShowNewChat(false);
+        setActiveChat(existingChat);
+        return;
+      }
+
+      // Create new chat
       const chatDoc = await addDoc(collection(db, "chats"), {
         participants: [profile.uid, client.uid],
         clientName: client.name,
@@ -142,7 +145,6 @@ export default function MessagesPage() {
         unreadCount: 0,
       });
       setShowNewChat(false);
-      // Auto-open the new chat
       setActiveChat({
         id: chatDoc.id,
         participants: [profile.uid, client.uid],
