@@ -209,17 +209,37 @@ export default function MessagesPage() {
             <ArrowLeft size={20} />
           </button>
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
-            {activeChat.clientName?.charAt(0)?.toUpperCase() || "?"}
+            {isOwner
+              ? activeChat.clientName?.charAt(0)?.toUpperCase() || "?"
+              : "T"}
           </div>
-          <h2 className="font-semibold text-text">{activeChat.clientName}</h2>
+          <h2 className="font-semibold text-text">
+            {isOwner ? activeChat.clientName : "Coach Tom"}
+          </h2>
         </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto py-4">
           {messages.length === 0 ? (
-            <p className="py-12 text-center text-text-muted">
-              No messages yet. Say hello!
-            </p>
+            <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+              <MessageCircle size={48} className="mb-4 text-primary/40" />
+              {isOwner ? (
+                <p className="text-text-muted">
+                  No messages yet. Say hello!
+                </p>
+              ) : (
+                <>
+                  <h3 className="mb-2 text-lg font-semibold text-text">
+                    Your Journey Starts Here
+                  </h3>
+                  <p className="max-w-sm text-sm text-text-secondary">
+                    Send Tom a message to get started. Together you&apos;ll
+                    build a plan tailored to your goals — whether it&apos;s
+                    losing weight, building muscle, or just feeling your best.
+                  </p>
+                </>
+              )}
+            </div>
           ) : (
             <div className="space-y-3">
               {messages.map((msg) => {
