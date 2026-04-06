@@ -4,7 +4,8 @@ import { useState } from "react";
 import { searchWorkouts, WORKOUT_CATEGORIES, LibraryWorkout } from "@/lib/workoutLibrary";
 import { suggestWorkoutWithAI, AIWorkoutResult } from "@/lib/ai";
 import { RequireActive } from "@/components/ui/RequireActive";
-import { Search, Dumbbell, Home, Clock, Zap, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { getExerciseInfo } from "@/lib/exerciseDatabase";
+import { Search, Dumbbell, Home, Clock, Zap, Sparkles, ChevronDown, ChevronUp, HelpCircle, X } from "lucide-react";
 import clsx from "clsx";
 
 export default function WorkoutIdeasPage() {
@@ -16,6 +17,10 @@ export default function WorkoutIdeasPage() {
   // AI state
   const [aiLoading, setAiLoading] = useState(false);
   const [aiWorkout, setAiWorkout] = useState<AIWorkoutResult | null>(null);
+
+  // Exercise info popup
+  const [infoExercise, setInfoExercise] = useState<string | null>(null);
+  const exerciseInfo = infoExercise ? getExerciseInfo(infoExercise) : null;
 
   // Filter library
   const libraryResults = searchWorkouts(
@@ -77,7 +82,16 @@ export default function WorkoutIdeasPage() {
                   {i + 1}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-text">{exercise.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-text">{exercise.name}</p>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setInfoExercise(exercise.name); }}
+                      className="shrink-0 text-text-muted hover:text-primary transition-colors"
+                      title="How to do this exercise"
+                    >
+                      <HelpCircle size={14} />
+                    </button>
+                  </div>
                   <div className="mt-1 flex flex-wrap gap-2">
                     <span className="rounded-md bg-surface-light px-2 py-0.5 text-xs text-text-muted">{exercise.sets} sets</span>
                     <span className="rounded-md bg-surface-light px-2 py-0.5 text-xs text-text-muted">{exercise.reps}</span>
@@ -245,7 +259,16 @@ export default function WorkoutIdeasPage() {
                     {i + 1}
                   </div>
                   <div className="flex-1">
-                    <p className="font-bold text-text">{exercise.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-text">{exercise.name}</p>
+                      <button
+                        onClick={() => setInfoExercise(exercise.name)}
+                        className="shrink-0 text-text-muted hover:text-accent transition-colors"
+                        title="How to do this exercise"
+                      >
+                        <HelpCircle size={14} />
+                      </button>
+                    </div>
                     <div className="mt-1 flex flex-wrap gap-2">
                       <span className="rounded-md bg-surface-light px-2 py-0.5 text-xs text-text-muted">{exercise.sets} sets</span>
                       <span className="rounded-md bg-surface-light px-2 py-0.5 text-xs text-text-muted">{exercise.reps}</span>
@@ -270,6 +293,50 @@ export default function WorkoutIdeasPage() {
           </div>
         )}
       </div>
+
+      {/* Exercise Info Modal */}
+      {infoExercise && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-bg p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-text">{infoExercise}</h3>
+              <button
+                onClick={() => setInfoExercise(null)}
+                className="text-text-muted hover:text-text"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            {exerciseInfo ? (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="mb-1 text-sm font-bold text-primary">How To</h4>
+                  <p className="text-sm leading-relaxed text-text-secondary">
+                    {exerciseInfo.howTo}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="mb-2 text-sm font-bold text-accent">Muscles Worked</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {exerciseInfo.muscles.map((muscle) => (
+                      <span
+                        key={muscle}
+                        className="rounded-full bg-accent/10 px-3 py-1 text-xs font-medium text-accent"
+                      >
+                        {muscle}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-text-muted">
+                No information available for this exercise yet.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </RequireActive>
   );
 }
