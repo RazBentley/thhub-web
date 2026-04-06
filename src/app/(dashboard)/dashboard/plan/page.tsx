@@ -14,7 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { MealPlan, DailyProgress, ExtraFoodItem } from "@/types";
 import { lookupFoodWithAI } from "@/lib/ai";
-import { searchFood } from "@/lib/foodDatabase";
+import { searchFood, FoodItem } from "@/lib/foodDatabase";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import {
   ChevronLeft,
@@ -169,7 +169,7 @@ export default function MyPlanPage() {
     setShowManual(true);
   };
 
-  const [foodResults, setFoodResults] = useState<ReturnType<typeof searchFood>>([]);
+  const [foodResults, setFoodResults] = useState<FoodItem[]>([]);
   const [showFoodResults, setShowFoodResults] = useState(false);
 
   const findFood = async () => {
@@ -205,7 +205,7 @@ export default function MyPlanPage() {
     }
   };
 
-  const selectFoodResult = (food: ReturnType<typeof searchFood>[0]) => {
+  const selectFoodResult = (food: FoodItem) => {
     setManualName(food.name);
     setManualCal(String(food.calories));
     setManualProtein(String(food.protein));
