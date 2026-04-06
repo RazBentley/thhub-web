@@ -6,8 +6,10 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { db, storage } from "@/lib/firebase";
-import { Calendar, LogOut, Sun, Moon, Camera } from "lucide-react";
+import { OnboardingInfo } from "@/types";
+import { Calendar, LogOut, Sun, Moon, Camera, User, Save, ChevronDown, ChevronUp } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import Link from "next/link";
 import clsx from "clsx";
 
 const DAYS = [
@@ -145,6 +147,9 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* About Me */}
+      {!isOwner && <AboutMeSection />}
+
       {/* Theme */}
       <ThemeToggle />
 
@@ -156,6 +161,122 @@ export default function ProfilePage() {
         <LogOut size={18} />
         Sign Out
       </button>
+    </div>
+  );
+}
+
+function AboutMeSection() {
+  const { profile } = useAuth();
+  const [expanded, setExpanded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const existing = profile?.onboarding || {};
+  const [mainGoal, setMainGoal] = useState(existing.mainGoal || "");
+  const [motivation, setMotivation] = useState(existing.motivation || "");
+  const [experience, setExperience] = useState(existing.experience || "");
+  const [trainingDays, setTrainingDays] = useState(existing.trainingDays || "");
+  const [healthConditions, setHealthConditions] = useState(existing.healthConditions || "");
+  const [dietaryRequirements, setDietaryRequirements] = useState(existing.dietaryRequirements || "");
+  const [additionalNotes, setAdditionalNotes] = useState(existing.additionalNotes || "");
+
+  const handleSave = async () => {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      const onboarding: OnboardingInfo = {
+        mainGoal: mainGoal || undefined,
+        motivation: motivation || undefined,
+        experience: experience || undefined,
+        trainingDays: trainingDays || undefined,
+        healthConditions: healthConditions || undefined,
+        dietaryRequirements: dietaryRequirements || undefined,
+        additionalNotes: additionalNotes || undefined,
+        completedAt: Date.now(),
+      };
+      await updateDoc(doc(db, "users", profile.uid), { onboarding });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      /* silent */
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const hasInfo = existing.mainGoal || existing.motivation || existing.experience;
+
+  const Field = ({ label, value, onChange, placeholder, multiline }: {
+    label: string; value: string; onChange: (v: string) => void; placeholder: string; multiline?: boolean;
+  }) => (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-text-secondary">{label}</label>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+          rows={3}
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+        />
+      )}
+    </div>
+  );
+
+  return (
+    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between p-5 text-left hover:bg-surface-light/50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <User size={18} className="text-primary" />
+          <h3 className="font-semibold text-text">About Me</h3>
+          {!hasInfo && (
+            <span className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent">
+              Not filled in yet
+            </span>
+          )}
+        </div>
+        {expanded ? (
+          <ChevronUp size={18} className="text-text-muted" />
+        ) : (
+          <ChevronDown size={18} className="text-text-muted" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border p-5 space-y-4">
+          <p className="text-sm text-text-muted">
+            This info helps your coach create the best plan for you. Update it
+            anytime.
+          </p>
+          <Field label="Main Goal" value={mainGoal} onChange={setMainGoal} placeholder="e.g. Lose weight, build muscle" />
+          <Field label="What's Driving You?" value={motivation} onChange={setMotivation} placeholder="e.g. Health, confidence, holiday coming up" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Training Experience" value={experience} onChange={setExperience} placeholder="e.g. Beginner, intermediate" />
+            <Field label="Training Days per Week" value={trainingDays} onChange={setTrainingDays} placeholder="e.g. 4 days" />
+          </div>
+          <Field label="Injuries or Health Conditions" value={healthConditions} onChange={setHealthConditions} placeholder="e.g. Bad knee, asthma — or 'none'" multiline />
+          <Field label="Dietary Requirements" value={dietaryRequirements} onChange={setDietaryRequirements} placeholder="e.g. Vegetarian, lactose intolerant — or 'none'" multiline />
+          <Field label="Anything Else for Your Coach" value={additionalNotes} onChange={setAdditionalNotes} placeholder="Schedule, preferences, past experience..." multiline />
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2.5 font-semibold text-white hover:bg-primary-dark disabled:opacity-50 transition-all"
+          >
+            <Save size={16} />
+            {saved ? "Saved!" : saving ? "Saving..." : "Save"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
