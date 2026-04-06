@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { doc, updateDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
-import { db } from "@/lib/firebase";
-import { Calendar, LogOut, Sun, Moon } from "lucide-react";
+import { db, storage } from "@/lib/firebase";
+import { Calendar, LogOut, Sun, Moon, Camera } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import clsx from "clsx";
 
 const DAYS = [
@@ -24,6 +26,8 @@ export default function ProfilePage() {
     profile?.checkInDay || "Monday"
   );
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoURL, setPhotoURL] = useState(profile?.photoURL || "");
 
   const updateCheckInDay = async (day: string) => {
     if (!profile) return;
@@ -38,6 +42,23 @@ export default function ProfilePage() {
     }
   };
 
+  const handlePhotoUpload = async (file: File) => {
+    if (!profile) return;
+    setUploadingPhoto(true);
+    try {
+      const path = `profile-photos/${profile.uid}/avatar.jpg`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      await updateDoc(doc(db, "users", profile.uid), { photoURL: url });
+      setPhotoURL(url);
+    } catch {
+      /* silent */
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     window.location.href = "/";
@@ -47,11 +68,38 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">Profile</h1>
 
-      {/* User Info */}
+      {/* User Info with Photo Upload */}
       <div className="rounded-xl border border-border bg-surface p-5">
         <div className="flex items-center gap-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary">
-            {profile?.name?.charAt(0)?.toUpperCase() || "?"}
+          {/* Avatar with upload */}
+          <div className="relative">
+            {photoURL ? (
+              <img
+                src={photoURL}
+                alt={profile?.name || "Profile"}
+                className="h-20 w-20 rounded-full object-cover border-2 border-border"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 text-3xl font-bold text-primary">
+                {profile?.name?.charAt(0)?.toUpperCase() || "?"}
+              </div>
+            )}
+            <label className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-white hover:bg-primary-dark transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handlePhotoUpload(file);
+                }}
+              />
+              {uploadingPhoto ? (
+                <LoadingSpinner size="sm" />
+              ) : (
+                <Camera size={14} />
+              )}
+            </label>
           </div>
           <div>
             <h2 className="text-xl font-bold text-text">{profile?.name}</h2>

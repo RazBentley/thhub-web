@@ -84,9 +84,17 @@ export function Sidebar({
       {/* User info */}
       <div className="border-b border-border p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
-            {profile?.name?.charAt(0)?.toUpperCase() || "?"}
-          </div>
+          {profile?.photoURL ? (
+            <img
+              src={profile.photoURL}
+              alt={profile.name}
+              className="h-10 w-10 rounded-full object-cover border border-border"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
+              {profile?.name?.charAt(0)?.toUpperCase() || "?"}
+            </div>
+          )}
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-text">
               {profile?.name || "Loading..."}
