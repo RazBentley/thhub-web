@@ -157,10 +157,16 @@ export interface WorkoutProgramme {
   updatedAt: number;
 }
 
+export interface ExerciseLog {
+  weight?: string;
+  notes?: string;
+}
+
 export interface WorkoutProgress {
   date: string;
   dayLabel: string;
   exercisesCompleted: boolean[];
+  exerciseLogs?: ExerciseLog[];
   completedAt?: number;
 }
 
