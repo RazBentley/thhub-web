@@ -49,7 +49,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await signUp(email, password, name, role);
-      router.push("/dashboard");
+      router.push(role === "client" ? "/dashboard/onboarding" : "/dashboard");
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Failed to create account.";

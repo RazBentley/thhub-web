@@ -378,6 +378,57 @@ export default function ClientProfilePage({
         </div>
       )}
 
+      {/* Onboarding Info */}
+      {client.onboarding && client.onboarding.mainGoal && (
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <h3 className="mb-3 font-semibold text-text">About This Client</h3>
+          <div className="grid gap-3 sm:grid-cols-2 text-sm">
+            {client.onboarding.mainGoal && (
+              <div>
+                <span className="text-text-muted">Goal:</span>{" "}
+                <span className="text-text">{client.onboarding.mainGoal}</span>
+              </div>
+            )}
+            {client.onboarding.motivation && (
+              <div>
+                <span className="text-text-muted">Motivation:</span>{" "}
+                <span className="text-text">{client.onboarding.motivation}</span>
+              </div>
+            )}
+            {client.onboarding.experience && (
+              <div>
+                <span className="text-text-muted">Experience:</span>{" "}
+                <span className="text-text capitalize">{client.onboarding.experience}</span>
+              </div>
+            )}
+            {client.onboarding.trainingDays && (
+              <div>
+                <span className="text-text-muted">Training:</span>{" "}
+                <span className="text-text">{client.onboarding.trainingDays}/week</span>
+              </div>
+            )}
+            {client.onboarding.healthConditions && (
+              <div className="col-span-2">
+                <span className="text-text-muted">Health/Injuries:</span>{" "}
+                <span className="text-text">{client.onboarding.healthConditions}</span>
+              </div>
+            )}
+            {client.onboarding.dietaryRequirements && (
+              <div className="col-span-2">
+                <span className="text-text-muted">Dietary:</span>{" "}
+                <span className="text-text">{client.onboarding.dietaryRequirements}</span>
+              </div>
+            )}
+            {client.onboarding.additionalNotes && (
+              <div className="col-span-2">
+                <span className="text-text-muted">Notes:</span>{" "}
+                <span className="text-text">{client.onboarding.additionalNotes}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
