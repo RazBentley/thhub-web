@@ -4,7 +4,16 @@ import { useEffect, useState, use } from "react";
 import { doc, getDoc, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
-import { UserProfile, DailyProgress, WeeklyCheckIn, WeightGoal, MealPlan } from "@/types";
+import {
+  UserProfile,
+  DailyProgress,
+  WeeklyCheckIn,
+  WeightGoal,
+  MealPlan,
+  WorkoutProgress,
+  DailyCardio,
+  ExerciseLog,
+} from "@/types";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import Link from "next/link";
 import {
@@ -15,6 +24,11 @@ import {
   Target,
   MessageCircle,
   Droplets,
+  HeartPulse,
+  Footprints,
+  Check,
+  X,
+  Weight,
 } from "lucide-react";
 
 export default function ClientProfilePage({
@@ -29,6 +43,10 @@ export default function ClientProfilePage({
   const [latestCheckIn, setLatestCheckIn] = useState<WeeklyCheckIn | null>(null);
   const [goal, setGoal] = useState<WeightGoal | null>(null);
   const [mealPlan, setMealPlan] = useState<MealPlan | null>(null);
+  const [workoutProgress, setWorkoutProgress] = useState<WorkoutProgress | null>(null);
+  const [todayCardio, setTodayCardio] = useState<DailyCardio | null>(null);
+  const [recentCardio, setRecentCardio] = useState<DailyCardio[]>([]);
+  const [recentWorkouts, setRecentWorkouts] = useState<WorkoutProgress[]>([]);
   const [loading, setLoading] = useState(true);
 
   const today = new Date().toISOString().split("T")[0];
@@ -65,6 +83,44 @@ export default function ClientProfilePage({
         doc(db, "users", uid, "mealPlan", "current")
       );
       if (planDoc.exists()) setMealPlan(planDoc.data() as MealPlan);
+
+      // Today's workout
+      const workoutDoc = await getDoc(
+        doc(db, "users", uid, "workoutProgress", today)
+      );
+      if (workoutDoc.exists())
+        setWorkoutProgress(workoutDoc.data() as WorkoutProgress);
+
+      // Today's cardio
+      const cardioDoc = await getDoc(
+        doc(db, "users", uid, "cardioLog", today)
+      );
+      if (cardioDoc.exists())
+        setTodayCardio(cardioDoc.data() as DailyCardio);
+
+      // Recent workouts (last 7)
+      const recentWorkoutSnap = await getDocs(
+        query(
+          collection(db, "users", uid, "workoutProgress"),
+          orderBy("date", "desc"),
+          limit(7)
+        )
+      );
+      setRecentWorkouts(
+        recentWorkoutSnap.docs.map((d) => d.data() as WorkoutProgress)
+      );
+
+      // Recent cardio (last 7)
+      const recentCardioSnap = await getDocs(
+        query(
+          collection(db, "users", uid, "cardioLog"),
+          orderBy("date", "desc"),
+          limit(7)
+        )
+      );
+      setRecentCardio(
+        recentCardioSnap.docs.map((d) => d.data() as DailyCardio)
+      );
     } catch {
       /* silent */
     } finally {
@@ -88,8 +144,11 @@ export default function ClientProfilePage({
 
   const mealsCompleted = (todayProgress?.mealsCompleted || []).filter(Boolean).length;
   const totalMeals = mealPlan?.meals?.length || 0;
-  const waterL =
-    ((todayProgress?.waterGlasses || 0) * 0.5).toFixed(1);
+  const waterL = ((todayProgress?.waterGlasses || 0) * 0.5).toFixed(1);
+
+  const workoutCompleted = workoutProgress?.exercisesCompleted || [];
+  const workoutDone = workoutCompleted.filter(Boolean).length;
+  const workoutTotal = workoutCompleted.length;
 
   return (
     <div className="space-y-6">
@@ -112,7 +171,7 @@ export default function ClientProfilePage({
       {/* Today's Progress */}
       <div className="rounded-xl border border-border bg-surface p-5">
         <h3 className="mb-3 font-semibold text-text">Today&apos;s Progress</h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-lg bg-surface-light p-3 text-center">
             <UtensilsCrossed size={20} className="mx-auto mb-1 text-primary" />
             <p className="text-lg font-bold text-text">
@@ -125,8 +184,153 @@ export default function ClientProfilePage({
             <p className="text-lg font-bold text-text">{waterL}L</p>
             <p className="text-xs text-text-muted">Water</p>
           </div>
+          <div className="rounded-lg bg-surface-light p-3 text-center">
+            <Dumbbell size={20} className="mx-auto mb-1 text-accent" />
+            <p className="text-lg font-bold text-text">
+              {workoutTotal > 0 ? `${workoutDone}/${workoutTotal}` : "—"}
+            </p>
+            <p className="text-xs text-text-muted">
+              {workoutProgress ? workoutProgress.dayLabel : "Workout"}
+            </p>
+          </div>
+          <div className="rounded-lg bg-surface-light p-3 text-center">
+            <HeartPulse size={20} className="mx-auto mb-1 text-warning" />
+            <p className="text-lg font-bold text-text">
+              {todayCardio ? `${todayCardio.cardioMinutes}m` : "—"}
+            </p>
+            <p className="text-xs text-text-muted">
+              {todayCardio
+                ? `${(todayCardio.steps || 0).toLocaleString()} steps`
+                : "Cardio"}
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* Today's Workout Detail */}
+      {workoutProgress && (
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-semibold text-text">
+              Workout — {workoutProgress.dayLabel}
+            </h3>
+            {workoutProgress.completedAt && (
+              <span className="flex items-center gap-1 text-xs font-bold text-success">
+                <Check size={14} /> Complete
+              </span>
+            )}
+          </div>
+          <div className="space-y-2">
+            {workoutProgress.exercisesCompleted.map((done, i) => {
+              const log = workoutProgress.exerciseLogs?.[i];
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 rounded-lg bg-surface-light px-3 py-2 text-sm"
+                >
+                  <div
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                      done ? "bg-success" : "bg-border"
+                    }`}
+                  >
+                    {done ? (
+                      <Check size={12} className="text-white" />
+                    ) : (
+                      <X size={12} className="text-text-muted" />
+                    )}
+                  </div>
+                  <span
+                    className={`flex-1 ${
+                      done ? "text-text-muted line-through" : "text-text"
+                    }`}
+                  >
+                    Exercise {i + 1}
+                  </span>
+                  {log?.weight && (
+                    <span className="flex items-center gap-1 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                      <Weight size={10} />
+                      {log.weight}
+                    </span>
+                  )}
+                  {log?.notes && (
+                    <span className="text-xs text-text-muted italic">
+                      {log.notes}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Workouts */}
+      {recentWorkouts.length > 0 && (
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <h3 className="mb-3 font-semibold text-text">Recent Workouts</h3>
+          <div className="space-y-2">
+            {recentWorkouts.map((w, i) => {
+              const done = (w.exercisesCompleted || []).filter(Boolean).length;
+              const total = (w.exercisesCompleted || []).length;
+              return (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-lg bg-surface-light px-3 py-2 text-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-text-secondary">
+                      {new Date(w.date + "T00:00:00").toLocaleDateString(
+                        "en-GB",
+                        { weekday: "short", day: "numeric", month: "short" }
+                      )}
+                    </span>
+                    <span className="font-medium text-text">{w.dayLabel}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-text-muted">
+                      {done}/{total}
+                    </span>
+                    {w.completedAt && (
+                      <Check size={14} className="text-success" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Cardio */}
+      {recentCardio.length > 0 && (
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <h3 className="mb-3 font-semibold text-text">Recent Cardio & Steps</h3>
+          <div className="space-y-2">
+            {recentCardio.map((c, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between rounded-lg bg-surface-light px-3 py-2 text-sm"
+              >
+                <span className="text-text-secondary">
+                  {new Date(c.date + "T00:00:00").toLocaleDateString("en-GB", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </span>
+                <div className="flex gap-4 text-text-muted">
+                  <span>{c.cardioType}</span>
+                  <span>{c.cardioMinutes}m</span>
+                  <span className="flex items-center gap-1">
+                    <Footprints size={12} />
+                    {(c.steps || 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Latest Check-in */}
       {latestCheckIn && (
@@ -184,7 +388,7 @@ export default function ClientProfilePage({
             color: "text-primary",
           },
           {
-            href: `/dashboard/workouts?client=${uid}`,
+            href: `/dashboard/workouts/editor?client=${uid}`,
             icon: Dumbbell,
             label: "Workouts",
             color: "text-success",
