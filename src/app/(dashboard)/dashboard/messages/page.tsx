@@ -372,7 +372,7 @@ export default function MessagesPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-text">{chat.clientName}</p>
                 <p className="truncate text-sm text-text-secondary">
-                  {chat.lastMessage || "No messages yet"}
+                  {chat.lastMessage || "Tap to start the conversation"}
                 </p>
               </div>
               <div className="text-right shrink-0">
