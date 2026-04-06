@@ -155,6 +155,42 @@ export default function CheckInsPage() {
                   <Row label="Other" value={ci.otherNotes} />
                 </Section>
               )}
+              {/* Progress Photos */}
+              {(ci.frontPhotoUrl || ci.sidePhotoUrl || ci.backPhotoUrl) && (
+                <div>
+                  <h4 className="mb-2 text-sm font-bold text-text-muted uppercase tracking-wide">
+                    Progress Photos
+                  </h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {(["front", "side", "back"] as const).map((angle) => {
+                      const url = ci[`${angle}PhotoUrl` as keyof typeof ci] as string | undefined;
+                      return url ? (
+                        <div key={angle} className="text-center">
+                          <p className="mb-1 text-xs font-medium capitalize text-text-muted">
+                            {angle}
+                          </p>
+                          <div className="overflow-hidden rounded-lg border border-border aspect-[3/4]">
+                            <img
+                              src={url}
+                              alt={`${angle} photo`}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div
+                          key={angle}
+                          className="flex items-center justify-center rounded-lg border border-border bg-surface-light aspect-[3/4]"
+                        >
+                          <span className="text-xs text-text-muted capitalize">
+                            No {angle}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

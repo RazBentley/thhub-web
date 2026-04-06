@@ -127,6 +127,9 @@ export interface WeeklyCheckIn {
   otherNotes: string;
   wins: string;
   goalsNextWeek: string;
+  frontPhotoUrl?: string;
+  sidePhotoUrl?: string;
+  backPhotoUrl?: string;
 }
 
 export interface DailyCardio {

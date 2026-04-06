@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useAuth } from "@/context/AuthContext";
-import { db } from "@/lib/firebase";
+import { db, storage } from "@/lib/firebase";
 import { WeeklyCheckIn } from "@/types";
-import { ClipboardCheck, Send } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { ClipboardCheck, Send, Upload, Camera, X } from "lucide-react";
 
 function getWeekId(): string {
   const now = new Date();
@@ -14,6 +16,8 @@ function getWeekId(): string {
   const week = Math.ceil((diff / 86400000 + start.getDay() + 1) / 7);
   return `${now.getFullYear()}-W${week.toString().padStart(2, "0")}`;
 }
+
+const ANGLES = ["front", "side", "back"] as const;
 
 export default function CheckInPage() {
   const { profile } = useAuth();
@@ -41,16 +45,74 @@ export default function CheckInPage() {
     goalsNextWeek: "",
   });
 
+  // Photo state
+  const [photos, setPhotos] = useState<Record<string, File | null>>({
+    front: null,
+    side: null,
+    back: null,
+  });
+  const [photoPreviews, setPhotoPreviews] = useState<Record<string, string>>({});
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+
   const update = (key: string, value: string | boolean) =>
     setForm((f) => ({ ...f, [key]: value }));
+
+  const handlePhotoSelect = (angle: string, file: File | null) => {
+    setPhotos((prev) => ({ ...prev, [angle]: file }));
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPhotoPreviews((prev) => ({ ...prev, [angle]: url }));
+    } else {
+      setPhotoPreviews((prev) => {
+        const next = { ...prev };
+        delete next[angle];
+        return next;
+      });
+    }
+  };
+
+  const removePhoto = (angle: string) => {
+    handlePhotoSelect(angle, null);
+  };
+
+  const uploadPhotos = async (): Promise<{
+    frontPhotoUrl?: string;
+    sidePhotoUrl?: string;
+    backPhotoUrl?: string;
+  }> => {
+    if (!profile) return {};
+    const urls: Record<string, string> = {};
+    const weekId = getWeekId();
+
+    for (const angle of ANGLES) {
+      const file = photos[angle];
+      if (!file) continue;
+      const path = `check-in-photos/${profile.uid}/${weekId}/${angle}.jpg`;
+      const storageRef = ref(storage, path);
+      await uploadBytes(storageRef, file);
+      urls[`${angle}PhotoUrl`] = await getDownloadURL(storageRef);
+    }
+
+    return urls;
+  };
 
   const handleSubmit = async () => {
     if (!profile || !form.weightCurrent) return;
     setSubmitting(true);
     try {
+      // Upload photos if any selected
+      let photoUrls = {};
+      const hasPhotos = Object.values(photos).some(Boolean);
+      if (hasPhotos) {
+        setUploadingPhotos(true);
+        photoUrls = await uploadPhotos();
+        setUploadingPhotos(false);
+      }
+
       const weekId = getWeekId();
       const checkIn: WeeklyCheckIn = {
         ...form,
+        ...photoUrls,
         submittedAt: Date.now(),
         weekId,
       };
@@ -58,11 +120,22 @@ export default function CheckInPage() {
         doc(db, "users", profile.uid, "checkIns", weekId),
         checkIn
       );
+
+      // Also save to progressPhotos collection for the photos page
+      if (Object.keys(photoUrls).length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+        await setDoc(
+          doc(db, "users", profile.uid, "progressPhotos", today),
+          { date: today, ...photoUrls }
+        );
+      }
+
       setSubmitted(true);
     } catch {
       /* silent */
     } finally {
       setSubmitting(false);
+      setUploadingPhotos(false);
     }
   };
 
@@ -239,13 +312,70 @@ export default function CheckInPage() {
         </div>
       </section>
 
+      {/* Progress Photos (Optional) */}
+      <section className="rounded-xl border border-border bg-surface p-5">
+        <div className="mb-1 flex items-center gap-2">
+          <Camera size={18} className="text-primary" />
+          <h3 className="font-semibold text-text">Progress Photos</h3>
+        </div>
+        <p className="mb-4 text-sm text-text-muted">
+          Optional — upload front, side, and back photos to track your
+          transformation.
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          {ANGLES.map((angle) => {
+            const preview = photoPreviews[angle];
+            return (
+              <div key={angle} className="text-center">
+                <p className="mb-2 text-sm font-medium capitalize text-text-secondary">
+                  {angle}
+                </p>
+                {preview ? (
+                  <div className="relative overflow-hidden rounded-lg border border-border aspect-[3/4]">
+                    <img
+                      src={preview}
+                      alt={`${angle} preview`}
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      onClick={() => removePhoto(angle)}
+                      className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white hover:bg-error"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-surface-light aspect-[3/4] hover:border-primary/30 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        handlePhotoSelect(angle, file);
+                      }}
+                    />
+                    <Upload size={24} className="mb-2 text-text-muted" />
+                    <span className="text-xs text-text-muted">Upload</span>
+                  </label>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <button
         onClick={handleSubmit}
         disabled={submitting || !form.weightCurrent}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-4 font-semibold text-white hover:bg-primary-dark disabled:opacity-50 transition-all"
       >
         <Send size={18} />
-        {submitting ? "Submitting..." : "Submit Check-in"}
+        {uploadingPhotos
+          ? "Uploading photos..."
+          : submitting
+            ? "Submitting..."
+            : "Submit Check-in"}
       </button>
     </div>
   );
