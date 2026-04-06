@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
+import app from "@/lib/firebase";
 import { UserProfile } from "@/types";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { Bell, Send, CheckCircle } from "lucide-react";
@@ -60,9 +62,13 @@ export default function NotificationsPage() {
     if (!title || !message || selectedClients.length === 0) return;
     setSending(true);
     try {
-      // In a full implementation, this would call a Cloud Function
-      // For now, we show success UI
-      await new Promise((r) => setTimeout(r, 1000));
+      const functions = getFunctions(app);
+      const sendPush = httpsCallable(functions, "sendPushNotification");
+      await sendPush({
+        title,
+        message,
+        clientUids: selectedClients,
+      });
       setSent(true);
       setTimeout(() => {
         setSent(false);

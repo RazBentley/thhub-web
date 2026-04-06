@@ -27,6 +27,12 @@ export default function MealPlansPage() {
   const [notes, setNotes] = useState<string[]>([""]);
   const [supplements, setSupplements] = useState<string[]>([""]);
 
+  // Nutrition targets
+  const [targetCalories, setTargetCalories] = useState(0);
+  const [targetProtein, setTargetProtein] = useState(0);
+  const [targetCarbs, setTargetCarbs] = useState(0);
+  const [targetFat, setTargetFat] = useState(0);
+
   useEffect(() => {
     loadClients();
   }, []);
@@ -67,13 +73,29 @@ export default function MealPlansPage() {
         setNotes(plan.notes?.length ? plan.notes : [""]);
         setSupplements(plan.supplements?.length ? plan.supplements : [""]);
       } else {
-        // Reset for new plan
         setFreeCalories(0);
         setWaterTargetLitres(3);
         setMeals([]);
         setOptionalSnack("");
         setNotes([""]);
         setSupplements([""]);
+      }
+
+      // Load nutrition targets
+      const targetsDoc = await getDoc(
+        doc(db, "users", selectedClient, "settings", "nutritionTargets")
+      );
+      if (targetsDoc.exists()) {
+        const t = targetsDoc.data();
+        setTargetCalories(t.calories || 0);
+        setTargetProtein(t.protein || 0);
+        setTargetCarbs(t.carbs || 0);
+        setTargetFat(t.fat || 0);
+      } else {
+        setTargetCalories(0);
+        setTargetProtein(0);
+        setTargetCarbs(0);
+        setTargetFat(0);
       }
     } catch {
       /* silent */
@@ -97,6 +119,19 @@ export default function MealPlansPage() {
         doc(db, "users", selectedClient, "mealPlan", "current"),
         plan
       );
+
+      // Save nutrition targets
+      if (targetCalories || targetProtein || targetCarbs || targetFat) {
+        await setDoc(
+          doc(db, "users", selectedClient, "settings", "nutritionTargets"),
+          {
+            calories: targetCalories,
+            protein: targetProtein,
+            carbs: targetCarbs,
+            fat: targetFat,
+          }
+        );
+      }
     } catch {
       /* silent */
     } finally {
@@ -210,6 +245,56 @@ export default function MealPlansPage() {
                 className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-text focus:border-primary focus:outline-none"
                 step="0.5"
               />
+            </div>
+          </div>
+
+          {/* Nutrition Targets */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <h3 className="mb-3 font-semibold text-text">Daily Nutrition Targets</h3>
+            <p className="mb-3 text-xs text-text-muted">
+              Set the client&apos;s daily macro targets. These show on their Nutrition page as progress bars.
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div>
+                <label className="mb-1 block text-xs text-text-secondary">Calories</label>
+                <input
+                  type="number"
+                  value={targetCalories || ""}
+                  onChange={(e) => setTargetCalories(parseInt(e.target.value) || 0)}
+                  placeholder="e.g. 2200"
+                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-sm text-text focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-secondary">Protein (g)</label>
+                <input
+                  type="number"
+                  value={targetProtein || ""}
+                  onChange={(e) => setTargetProtein(parseInt(e.target.value) || 0)}
+                  placeholder="e.g. 180"
+                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-sm text-text focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-secondary">Carbs (g)</label>
+                <input
+                  type="number"
+                  value={targetCarbs || ""}
+                  onChange={(e) => setTargetCarbs(parseInt(e.target.value) || 0)}
+                  placeholder="e.g. 200"
+                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-sm text-text focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-secondary">Fat (g)</label>
+                <input
+                  type="number"
+                  value={targetFat || ""}
+                  onChange={(e) => setTargetFat(parseInt(e.target.value) || 0)}
+                  placeholder="e.g. 60"
+                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-sm text-text focus:border-primary focus:outline-none"
+                />
+              </div>
             </div>
           </div>
 

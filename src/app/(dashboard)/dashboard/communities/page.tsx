@@ -11,6 +11,7 @@ import {
   getDoc,
   getDocs,
   updateDoc,
+  deleteDoc,
   setDoc,
   increment,
 } from "firebase/firestore";
@@ -140,6 +141,15 @@ export default function CommunitiesPage() {
       /* silent */
     } finally {
       setCreating(false);
+    }
+  };
+
+  const deleteCommunity = async (communityId: string) => {
+    if (!confirm("Are you sure you want to delete this community? This cannot be undone.")) return;
+    try {
+      await deleteDoc(doc(db, "communities", communityId));
+    } catch {
+      /* silent */
     }
   };
 
@@ -325,6 +335,17 @@ export default function CommunitiesPage() {
                     )}
                     {!accessible && (
                       <p className="text-xs text-error">Restricted</p>
+                    )}
+                    {(isOwner || community.createdBy === profile?.uid) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteCommunity(community.id);
+                        }}
+                        className="mt-1 text-xs text-error/60 hover:text-error"
+                      >
+                        Delete
+                      </button>
                     )}
                   </div>
                 </button>

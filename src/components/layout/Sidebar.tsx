@@ -36,6 +36,7 @@ const clientLinks = [
   { href: "/dashboard/messages", label: "Messages", icon: MessageCircle },
   { href: "/dashboard/communities", label: "Communities", icon: Users },
   { href: "/dashboard/checkin", label: "Check-in", icon: ClipboardCheck },
+  { href: "/dashboard/checkin-history", label: "My Check-ins", icon: CalendarCheck },
   { href: "/dashboard/goals", label: "Goals", icon: Target },
   { href: "/dashboard/progress-photos", label: "Photos", icon: Camera },
   { href: "/dashboard/profile", label: "Profile", icon: User },
