@@ -59,6 +59,30 @@ export default function MessagesPage() {
 
   useEffect(() => {
     if (!activeChat) return;
+
+    // Clear unread count when opening a chat
+    updateDoc(doc(db, "chats", activeChat.id), { unreadCount: 0 }).catch(() => {});
+
+    // Mark messages as read
+    const markRead = async () => {
+      try {
+        const msgsSnap = await getDocs(
+          collection(db, "chats", activeChat.id, "messages")
+        );
+        msgsSnap.forEach((msgDoc) => {
+          const msg = msgDoc.data();
+          if (!msg.read && msg.senderId !== profile?.uid) {
+            updateDoc(doc(db, "chats", activeChat.id, "messages", msgDoc.id), {
+              read: true,
+            }).catch(() => {});
+          }
+        });
+      } catch {
+        /* silent */
+      }
+    };
+    markRead();
+
     const q = query(
       collection(db, "chats", activeChat.id, "messages"),
       orderBy("timestamp", "asc")
