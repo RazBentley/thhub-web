@@ -163,7 +163,7 @@ export default function MyPlanPage() {
     setManualProtein("");
     setManualCarbs("");
     setManualFat("");
-    setManualGrams("100");
+    setManualGrams("");
     setAiSource(false);
     setShowManual(true);
   };
@@ -173,7 +173,8 @@ export default function MyPlanPage() {
     setAiLoading(true);
     setAiSource(false);
     try {
-      const result = await lookupFoodWithAI(manualName.trim(), manualGrams + "g");
+      const portion = manualGrams || "standard serving";
+      const result = await lookupFoodWithAI(manualName.trim(), portion);
       if (result) {
         setManualName(result.name);
         setManualCal(String(result.calories));
@@ -192,7 +193,7 @@ export default function MyPlanPage() {
 
   const addManualExtra = () => {
     if (!manualName.trim()) return;
-    const amount = parseFloat(manualGrams) || 0;
+    const sizeText = manualGrams?.trim() || "1 serving";
     const extra: ExtraFoodItem = {
       id: `extra-${Date.now()}`,
       name: manualName.trim(),
@@ -200,7 +201,7 @@ export default function MyPlanPage() {
       protein: Math.round((parseFloat(manualProtein) || 0) * 10) / 10,
       carbs: Math.round((parseFloat(manualCarbs) || 0) * 10) / 10,
       fat: Math.round((parseFloat(manualFat) || 0) * 10) / 10,
-      servingSize: amount ? `${amount}g/ml` : "1 serving",
+      servingSize: sizeText,
       mealLabel: manualMeal,
     };
     saveProgress({
@@ -632,15 +633,34 @@ export default function MyPlanPage() {
               </div>
               <div>
                 <label className="mb-1 block text-sm text-text-secondary">
-                  Amount (g or ml)
+                  Portion Size
                 </label>
+                <div className="mb-2 flex gap-2">
+                  {["Small", "Medium", "Large"].map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setManualGrams(size.toLowerCase())}
+                      className={clsx(
+                        "flex-1 rounded-lg py-2 text-sm font-medium transition-all",
+                        manualGrams === size.toLowerCase()
+                          ? "bg-primary text-white"
+                          : "bg-surface-light text-text-secondary hover:bg-border"
+                      )}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
                 <input
-                  type="number"
                   value={manualGrams}
                   onChange={(e) => setManualGrams(e.target.value)}
-                  placeholder="e.g. 300"
-                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+                  placeholder="Or enter g/ml, e.g. 300"
+                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
                 />
+                <p className="mt-1 text-xs text-text-muted">
+                  Don&apos;t know the weight? Just pick a size or leave blank for a standard portion.
+                </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
