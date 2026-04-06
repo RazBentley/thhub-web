@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { MealPlan, DailyProgress, ExtraFoodItem } from "@/types";
+import { lookupFoodWithAI } from "@/lib/ai";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import {
   ChevronLeft,
@@ -45,6 +46,8 @@ export default function MyPlanPage() {
 
   // Manual entry
   const [showManual, setShowManual] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSource, setAiSource] = useState(false);
   const [manualMeal, setManualMeal] = useState("extra");
   const [manualName, setManualName] = useState("");
   const [manualCal, setManualCal] = useState("");
@@ -161,7 +164,30 @@ export default function MyPlanPage() {
     setManualCarbs("");
     setManualFat("");
     setManualGrams("100");
+    setAiSource(false);
     setShowManual(true);
+  };
+
+  const aiLookup = async () => {
+    if (!manualName.trim()) return;
+    setAiLoading(true);
+    setAiSource(false);
+    try {
+      const result = await lookupFoodWithAI(manualName.trim(), manualGrams + "g");
+      if (result) {
+        setManualName(result.name);
+        setManualCal(String(result.calories));
+        setManualProtein(String(result.protein));
+        setManualCarbs(String(result.carbs));
+        setManualFat(String(result.fat));
+        setManualGrams(result.servingSize.replace(/[^0-9.]/g, "") || "100");
+        setAiSource(true);
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const addManualExtra = () => {
@@ -586,12 +612,26 @@ export default function MyPlanPage() {
                 <label className="mb-1 block text-sm text-text-secondary">
                   Food Name
                 </label>
-                <input
-                  value={manualName}
-                  onChange={(e) => setManualName(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
-                  placeholder="e.g. Protein bar"
-                />
+                <div className="flex gap-2">
+                  <input
+                    value={manualName}
+                    onChange={(e) => { setManualName(e.target.value); setAiSource(false); }}
+                    className="flex-1 rounded-lg border border-border bg-input-bg px-3 py-2 text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+                    placeholder="e.g. Costa latte, Greggs sausage roll"
+                  />
+                  <button
+                    onClick={aiLookup}
+                    disabled={aiLoading || !manualName.trim()}
+                    className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-dark disabled:opacity-50 transition-all"
+                  >
+                    {aiLoading ? "..." : "AI Lookup"}
+                  </button>
+                </div>
+                {aiSource && (
+                  <p className="mt-1 text-xs text-accent">
+                    Nutrition estimated by AI — check values are reasonable
+                  </p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-sm text-text-secondary">
