@@ -61,6 +61,11 @@ export default function OnboardingPage() {
   const [dietaryRequirements, setDietaryRequirements] = useState("");
   const [additionalNotes, setAdditionalNotes] = useState("");
 
+  if (profile?.onboarding?.completedAt) {
+    router.push("/dashboard");
+    return null;
+  }
+
   const handleSave = async () => {
     if (!profile) return;
     setSaving(true);
