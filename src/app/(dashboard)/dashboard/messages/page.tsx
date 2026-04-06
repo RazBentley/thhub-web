@@ -11,13 +11,12 @@ import {
   updateDoc,
   doc,
   getDocs,
-  setDoc,
 } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
-import { Chat, Message } from "@/types";
+import { Chat, Message, UserProfile } from "@/types";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
-import { MessageCircle, Send, ArrowLeft } from "lucide-react";
+import { MessageCircle, Send, ArrowLeft, Plus, Search, X } from "lucide-react";
 import clsx from "clsx";
 
 export default function MessagesPage() {
@@ -29,6 +28,13 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // New chat modal state
+  const [showNewChat, setShowNewChat] = useState(false);
+  const [availableUsers, setAvailableUsers] = useState<UserProfile[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [creatingChat, setCreatingChat] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -42,9 +48,14 @@ export default function MessagesPage() {
         .sort((a, b) => (b.lastMessageTime || 0) - (a.lastMessageTime || 0));
       setChats(chatList);
       setLoading(false);
+
+      // For clients with no chats, auto-start chat with coach
+      if (!isOwner && chatList.length === 0 && !creatingChat) {
+        autoCreateClientChat();
+      }
     });
     return unsub;
-  }, [profile]);
+  }, [profile, isOwner]);
 
   useEffect(() => {
     if (!activeChat) return;
@@ -53,7 +64,9 @@ export default function MessagesPage() {
       orderBy("timestamp", "asc")
     );
     const unsub = onSnapshot(q, (snap) => {
-      setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Message)));
+      setMessages(
+        snap.docs.map((d) => ({ id: d.id, ...d.data() } as Message))
+      );
       setTimeout(
         () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
         100
@@ -61,6 +74,89 @@ export default function MessagesPage() {
     });
     return unsub;
   }, [activeChat]);
+
+  // Auto-create a chat between client and coach
+  const autoCreateClientChat = async () => {
+    if (!profile || isOwner || creatingChat) return;
+    setCreatingChat(true);
+    try {
+      // Find the coach (owner)
+      const ownersSnap = await getDocs(
+        query(collection(db, "users"), where("role", "==", "owner"))
+      );
+      if (ownersSnap.empty) return;
+      const coach = ownersSnap.docs[0].data() as UserProfile;
+
+      const chatDoc = await addDoc(collection(db, "chats"), {
+        participants: [coach.uid, profile.uid],
+        clientName: profile.name,
+        lastMessage: "",
+        lastMessageTime: Date.now(),
+        unreadCount: 0,
+      });
+      // The onSnapshot listener will pick up the new chat
+    } catch {
+      /* silent */
+    } finally {
+      setCreatingChat(false);
+    }
+  };
+
+  // Load users for new chat (coach only)
+  const openNewChat = async () => {
+    setShowNewChat(true);
+    setLoadingUsers(true);
+    setUserSearch("");
+    try {
+      const snap = await getDocs(
+        query(collection(db, "users"), where("role", "==", "client"))
+      );
+      const clients = snap.docs
+        .map((d) => d.data() as UserProfile)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      // Filter out clients who already have a chat
+      const existingParticipants = new Set(
+        chats.flatMap((c) => c.participants)
+      );
+      const available = clients.filter(
+        (c) => !existingParticipants.has(c.uid)
+      );
+      setAvailableUsers(available);
+    } catch {
+      /* silent */
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const startChatWith = async (client: UserProfile) => {
+    if (!profile) return;
+    setCreatingChat(true);
+    try {
+      const chatDoc = await addDoc(collection(db, "chats"), {
+        participants: [profile.uid, client.uid],
+        clientName: client.name,
+        lastMessage: "",
+        lastMessageTime: Date.now(),
+        unreadCount: 0,
+      });
+      setShowNewChat(false);
+      // Auto-open the new chat
+      setActiveChat({
+        id: chatDoc.id,
+        participants: [profile.uid, client.uid],
+        clientName: client.name,
+        lastMessage: "",
+        lastMessageTime: Date.now(),
+        unreadCount: 0,
+      });
+    } catch {
+      /* silent */
+    } finally {
+      setCreatingChat(false);
+    }
+  };
 
   const sendMessage = async () => {
     if (!profile || !activeChat || !newMessage.trim()) return;
@@ -88,8 +184,13 @@ export default function MessagesPage() {
     const d = new Date(ts);
     const now = new Date();
     const diff = now.getTime() - d.getTime();
-    if (diff < 86400000) return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-    if (diff < 604800000) return d.toLocaleDateString("en-GB", { weekday: "short" });
+    if (diff < 86400000)
+      return d.toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    if (diff < 604800000)
+      return d.toLocaleDateString("en-GB", { weekday: "short" });
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
   };
 
@@ -181,9 +282,24 @@ export default function MessagesPage() {
   }
 
   // Chat list
+  const filteredUsers = availableUsers.filter((u) =>
+    u.name.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text">Messages</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-text">Messages</h1>
+        {isOwner && (
+          <button
+            onClick={openNewChat}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark"
+          >
+            <Plus size={16} />
+            New Chat
+          </button>
+        )}
+      </div>
 
       {chats.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -191,9 +307,10 @@ export default function MessagesPage() {
           <h2 className="text-xl font-bold text-text">No Messages Yet</h2>
           <p className="mt-1 text-text-secondary">
             {isOwner
-              ? "Start a conversation with a client"
-              : "Your coach will message you here"}
+              ? "Start a conversation with a client using the button above."
+              : "Setting up your chat with your coach..."}
           </p>
+          {!isOwner && <LoadingSpinner size="sm" />}
         </div>
       ) : (
         <div className="space-y-2">
@@ -209,7 +326,7 @@ export default function MessagesPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-text">{chat.clientName}</p>
                 <p className="truncate text-sm text-text-secondary">
-                  {chat.lastMessage || "No messages"}
+                  {chat.lastMessage || "No messages yet"}
                 </p>
               </div>
               <div className="text-right shrink-0">
@@ -226,6 +343,71 @@ export default function MessagesPage() {
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* New Chat Modal (Coach only) */}
+      {showNewChat && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-bg p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-text">New Conversation</h3>
+              <button
+                onClick={() => setShowNewChat(false)}
+                className="text-text-muted hover:text-text"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="relative mb-4">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+              />
+              <input
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder="Search clients..."
+                className="w-full rounded-lg border border-border bg-input-bg pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+              />
+            </div>
+
+            {/* Client list */}
+            {loadingUsers ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner size="sm" />
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <p className="py-8 text-center text-sm text-text-muted">
+                {availableUsers.length === 0
+                  ? "All clients already have a chat."
+                  : "No clients match your search."}
+              </p>
+            ) : (
+              <div className="max-h-64 space-y-1 overflow-y-auto">
+                {filteredUsers.map((user) => (
+                  <button
+                    key={user.uid}
+                    onClick={() => startChatWith(user)}
+                    disabled={creatingChat}
+                    className="flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-surface-light transition-colors disabled:opacity-50"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-bold text-primary">
+                      {user.name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-text">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-text-muted">{user.email}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
