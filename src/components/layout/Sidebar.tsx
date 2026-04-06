@@ -34,6 +34,7 @@ const clientLinks = [
   { href: "/dashboard/workout-ideas", label: "Workout Ideas", icon: Sparkles },
   { href: "/dashboard/cardio", label: "Cardio", icon: HeartPulse },
   { href: "/dashboard/messages", label: "Messages", icon: MessageCircle },
+  { href: "/dashboard/communities", label: "Communities", icon: Users },
   { href: "/dashboard/checkin", label: "Check-in", icon: ClipboardCheck },
   { href: "/dashboard/goals", label: "Goals", icon: Target },
   { href: "/dashboard/progress-photos", label: "Photos", icon: Camera },
@@ -47,6 +48,7 @@ const coachLinks = [
   { href: "/dashboard/workouts/editor", label: "Workouts", icon: PenTool },
   { href: "/dashboard/checkins", label: "Check-ins", icon: CalendarCheck },
   { href: "/dashboard/messages", label: "Messages", icon: MessageCircle },
+  { href: "/dashboard/communities", label: "Communities", icon: Users },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/subscriptions", label: "Subscriptions", icon: CreditCard },
 ];

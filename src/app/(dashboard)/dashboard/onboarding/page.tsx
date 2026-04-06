@@ -16,6 +16,7 @@ import {
   UtensilsCrossed,
   ArrowRight,
   SkipForward,
+  User,
 } from "lucide-react";
 import clsx from "clsx";
 
@@ -53,6 +54,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
 
+  const [gender, setGender] = useState("");
   const [mainGoal, setMainGoal] = useState("");
   const [motivation, setMotivation] = useState("");
   const [experience, setExperience] = useState("");
@@ -80,7 +82,9 @@ export default function OnboardingPage() {
         additionalNotes: additionalNotes || undefined,
         completedAt: Date.now(),
       };
-      await updateDoc(doc(db, "users", profile.uid), { onboarding });
+      const updates: Record<string, unknown> = { onboarding };
+      if (gender) updates.gender = gender;
+      await updateDoc(doc(db, "users", profile.uid), updates);
       router.push("/dashboard");
     } catch {
       /* silent */
@@ -122,7 +126,48 @@ export default function OnboardingPage() {
       </p>
     </div>,
 
-    // Step 1: Main goal
+    // Step 1: Gender
+    <div key="gender" className="space-y-4">
+      <div className="flex items-center gap-2">
+        <User size={20} className="text-primary" />
+        <h2 className="text-lg font-bold text-text">
+          About You
+        </h2>
+      </div>
+      <p className="text-sm text-text-muted">
+        This helps us personalise your experience and give you access to
+        the right community groups.
+      </p>
+      <div className="space-y-2">
+        {[
+          { value: "male", label: "Male" },
+          { value: "female", label: "Female" },
+          { value: "prefer-not-to-say", label: "Prefer not to say" },
+        ].map((option) => (
+          <button
+            key={option.value}
+            onClick={() => setGender(option.value)}
+            className={clsx(
+              "w-full rounded-lg border p-4 text-left transition-all",
+              gender === option.value
+                ? "border-primary bg-primary/10"
+                : "border-border bg-surface hover:border-primary/30"
+            )}
+          >
+            <p
+              className={clsx(
+                "font-semibold",
+                gender === option.value ? "text-primary" : "text-text"
+              )}
+            >
+              {option.label}
+            </p>
+          </button>
+        ))}
+      </div>
+    </div>,
+
+    // Step 2: Main goal
     <div key="goal" className="space-y-4">
       <div className="flex items-center gap-2">
         <Target size={20} className="text-primary" />
