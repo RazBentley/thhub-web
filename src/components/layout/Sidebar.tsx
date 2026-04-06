@@ -47,6 +47,7 @@ const coachLinks = [
   { href: "/dashboard/clients", label: "Clients", icon: Users },
   { href: "/dashboard/meal-plans", label: "Meal Plans", icon: UtensilsCrossed },
   { href: "/dashboard/workouts/editor", label: "Workouts", icon: PenTool },
+  { href: "/dashboard/workout-ideas", label: "Workout Ideas", icon: Sparkles },
   { href: "/dashboard/checkins", label: "Check-ins", icon: CalendarCheck },
   { href: "/dashboard/messages", label: "Messages", icon: MessageCircle },
   { href: "/dashboard/communities", label: "Communities", icon: Users },
