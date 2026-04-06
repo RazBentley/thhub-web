@@ -192,18 +192,15 @@ export default function MyPlanPage() {
 
   const addManualExtra = () => {
     if (!manualName.trim()) return;
-    const grams = parseFloat(manualGrams) || 100;
-    const multiplier = grams / 100;
+    const amount = parseFloat(manualGrams) || 0;
     const extra: ExtraFoodItem = {
       id: `extra-${Date.now()}`,
       name: manualName.trim(),
-      calories: Math.round((parseFloat(manualCal) || 0) * multiplier),
-      protein:
-        Math.round((parseFloat(manualProtein) || 0) * multiplier * 10) / 10,
-      carbs:
-        Math.round((parseFloat(manualCarbs) || 0) * multiplier * 10) / 10,
-      fat: Math.round((parseFloat(manualFat) || 0) * multiplier * 10) / 10,
-      servingSize: `${grams}g`,
+      calories: Math.round(parseFloat(manualCal) || 0),
+      protein: Math.round((parseFloat(manualProtein) || 0) * 10) / 10,
+      carbs: Math.round((parseFloat(manualCarbs) || 0) * 10) / 10,
+      fat: Math.round((parseFloat(manualFat) || 0) * 10) / 10,
+      servingSize: amount ? `${amount}g/ml` : "1 serving",
       mealLabel: manualMeal,
     };
     saveProgress({
@@ -599,7 +596,7 @@ export default function MyPlanPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-2xl border border-border bg-bg p-6">
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-bold text-text">Add Extra Food</h3>
+              <h3 className="text-lg font-bold text-text">Add Extra</h3>
               <button
                 onClick={() => setShowManual(false)}
                 className="text-text-muted hover:text-text"
@@ -610,47 +607,45 @@ export default function MyPlanPage() {
             <div className="space-y-3">
               <div>
                 <label className="mb-1 block text-sm text-text-secondary">
-                  Food Name
+                  What did you have?
                 </label>
                 <div className="flex gap-2">
                   <input
                     value={manualName}
                     onChange={(e) => { setManualName(e.target.value); setAiSource(false); }}
                     className="flex-1 rounded-lg border border-border bg-input-bg px-3 py-2 text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
-                    placeholder="e.g. Costa latte, Greggs sausage roll"
+                    placeholder="e.g. Costa latte, protein bar, banana"
                   />
                   <button
                     onClick={aiLookup}
                     disabled={aiLoading || !manualName.trim()}
                     className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-dark disabled:opacity-50 transition-all"
                   >
-                    {aiLoading ? "..." : "AI Lookup"}
+                    {aiLoading ? "..." : "Find"}
                   </button>
                 </div>
                 {aiSource && (
                   <p className="mt-1 text-xs text-accent">
-                    Nutrition estimated by AI — check values are reasonable
+                    Nutrition auto-filled — check values look right
                   </p>
                 )}
               </div>
               <div>
                 <label className="mb-1 block text-sm text-text-secondary">
-                  Amount (grams)
+                  Amount (g or ml)
                 </label>
                 <input
                   type="number"
                   value={manualGrams}
                   onChange={(e) => setManualGrams(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-text focus:border-primary focus:outline-none"
+                  placeholder="e.g. 300"
+                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
                 />
               </div>
-              <p className="text-xs text-text-muted">
-                Enter macros per 100g — they&apos;ll be scaled to your amount
-              </p>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="mb-1 block text-xs text-text-secondary">
-                    Calories (per 100g)
+                    Calories
                   </label>
                   <input
                     type="number"
@@ -662,7 +657,7 @@ export default function MyPlanPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-text-secondary">
-                    Protein (per 100g)
+                    Protein (g)
                   </label>
                   <input
                     type="number"
@@ -674,7 +669,7 @@ export default function MyPlanPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-text-secondary">
-                    Carbs (per 100g)
+                    Carbs (g)
                   </label>
                   <input
                     type="number"
@@ -686,7 +681,7 @@ export default function MyPlanPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-xs text-text-secondary">
-                    Fat (per 100g)
+                    Fat (g)
                   </label>
                   <input
                     type="number"
