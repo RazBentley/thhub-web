@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { RequireActive } from "@/components/ui/RequireActive";
+import { lookupFoodWithAI } from "@/lib/ai";
 
 export default function NutritionPage() {
   const { profile } = useAuth();
@@ -41,6 +42,31 @@ export default function NutritionPage() {
   const [fat, setFat] = useState("");
   const [servingSize, setServingSize] = useState("100g");
   const [quantity, setQuantity] = useState("1");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSource, setAiSource] = useState(false);
+
+  const lookupWithAI = async () => {
+    if (!foodName.trim()) return;
+    setAiLoading(true);
+    setAiSource(false);
+    try {
+      const result = await lookupFoodWithAI(foodName.trim(), servingSize);
+      if (result) {
+        setFoodName(result.name);
+        setBrand(result.brand);
+        setCalories(String(result.calories));
+        setProtein(String(result.protein));
+        setCarbs(String(result.carbs));
+        setFat(String(result.fat));
+        setServingSize(result.servingSize);
+        setAiSource(true);
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const dateStr = selectedDate.toISOString().split("T")[0];
   const isToday = dateStr === new Date().toISOString().split("T")[0];
@@ -299,12 +325,26 @@ export default function NutritionPage() {
                 <label className="mb-1 block text-sm text-text-secondary">
                   Food Name *
                 </label>
-                <input
-                  value={foodName}
-                  onChange={(e) => setFoodName(e.target.value)}
-                  placeholder="e.g. Chicken breast"
-                  className="w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
-                />
+                <div className="flex gap-2">
+                  <input
+                    value={foodName}
+                    onChange={(e) => { setFoodName(e.target.value); setAiSource(false); }}
+                    placeholder="e.g. Costa latte, chicken breast"
+                    className="flex-1 rounded-lg border border-border bg-input-bg px-3 py-2 text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+                  />
+                  <button
+                    onClick={lookupWithAI}
+                    disabled={aiLoading || !foodName.trim()}
+                    className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-dark disabled:opacity-50 transition-all"
+                  >
+                    {aiLoading ? "..." : "AI Lookup"}
+                  </button>
+                </div>
+                {aiSource && (
+                  <p className="mt-1 text-xs text-accent">
+                    Nutrition estimated by AI — check values are reasonable
+                  </p>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-sm text-text-secondary">

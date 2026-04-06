@@ -23,6 +23,7 @@ import {
   LogOut,
   X,
   PenTool,
+  Sparkles,
 } from "lucide-react";
 
 const clientLinks = [
@@ -30,6 +31,7 @@ const clientLinks = [
   { href: "/dashboard/plan", label: "My Plan", icon: UtensilsCrossed },
   { href: "/dashboard/nutrition", label: "Nutrition", icon: Apple },
   { href: "/dashboard/workouts", label: "Workouts", icon: Dumbbell },
+  { href: "/dashboard/workout-ideas", label: "Workout Ideas", icon: Sparkles },
   { href: "/dashboard/cardio", label: "Cardio", icon: HeartPulse },
   { href: "/dashboard/messages", label: "Messages", icon: MessageCircle },
   { href: "/dashboard/checkin", label: "Check-in", icon: ClipboardCheck },
