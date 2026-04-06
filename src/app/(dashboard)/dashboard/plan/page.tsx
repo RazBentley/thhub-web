@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { MealPlan, DailyProgress, ExtraFoodItem } from "@/types";
 import { lookupFoodWithAI } from "@/lib/ai";
+import { searchFood } from "@/lib/foodDatabase";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import {
   ChevronLeft,
@@ -168,8 +169,21 @@ export default function MyPlanPage() {
     setShowManual(true);
   };
 
-  const aiLookup = async () => {
+  const [foodResults, setFoodResults] = useState<ReturnType<typeof searchFood>>([]);
+  const [showFoodResults, setShowFoodResults] = useState(false);
+
+  const findFood = async () => {
     if (!manualName.trim()) return;
+
+    // Step 1: Check local database first
+    const localResults = searchFood(manualName.trim());
+    if (localResults.length > 0) {
+      setFoodResults(localResults);
+      setShowFoodResults(true);
+      return;
+    }
+
+    // Step 2: Fall back to AI
     setAiLoading(true);
     setAiSource(false);
     try {
@@ -181,7 +195,7 @@ export default function MyPlanPage() {
         setManualProtein(String(result.protein));
         setManualCarbs(String(result.carbs));
         setManualFat(String(result.fat));
-        setManualGrams(result.servingSize.replace(/[^0-9.]/g, "") || "100");
+        setManualGrams(result.servingSize.replace(/[^0-9.]/g, "") || "");
         setAiSource(true);
       }
     } catch {
@@ -189,6 +203,17 @@ export default function MyPlanPage() {
     } finally {
       setAiLoading(false);
     }
+  };
+
+  const selectFoodResult = (food: ReturnType<typeof searchFood>[0]) => {
+    setManualName(food.name);
+    setManualCal(String(food.calories));
+    setManualProtein(String(food.protein));
+    setManualCarbs(String(food.carbs));
+    setManualFat(String(food.fat));
+    setManualGrams(food.servingSize);
+    setShowFoodResults(false);
+    setAiSource(false);
   };
 
   const addManualExtra = () => {
@@ -618,7 +643,7 @@ export default function MyPlanPage() {
                     placeholder="e.g. Costa latte, protein bar, banana"
                   />
                   <button
-                    onClick={aiLookup}
+                    onClick={findFood}
                     disabled={aiLoading || !manualName.trim()}
                     className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-dark disabled:opacity-50 transition-all"
                   >
@@ -629,6 +654,28 @@ export default function MyPlanPage() {
                   <p className="mt-1 text-xs text-accent">
                     Nutrition auto-filled — check values look right
                   </p>
+                )}
+                {showFoodResults && foodResults.length > 0 && (
+                  <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-border bg-surface">
+                    {foodResults.map((food, i) => (
+                      <button
+                        key={i}
+                        onClick={() => selectFoodResult(food)}
+                        className="flex w-full items-center justify-between px-3 py-2.5 text-left hover:bg-surface-light border-b border-border/50 last:border-0"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-text">{food.name}</p>
+                          <p className="text-xs text-text-muted">
+                            {food.brand ? `${food.brand} · ` : ""}{food.servingSize}
+                          </p>
+                        </div>
+                        <div className="text-right text-xs text-text-secondary">
+                          <span className="text-accent">{food.calories}kcal</span>
+                          <span className="ml-2">P:{food.protein}g</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
               <div>
