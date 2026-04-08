@@ -286,7 +286,20 @@ export default function MessagesPage() {
                           : "rounded-bl-md bg-surface text-text"
                       )}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                      {msg.imageUrl && (
+                        <img
+                          src={msg.imageUrl}
+                          alt="Shared image"
+                          className="mb-2 max-w-full rounded-lg"
+                          style={{ maxHeight: 300 }}
+                        />
+                      )}
+                      {msg.audioUrl && (
+                        <div className="mb-1">
+                          <audio controls src={msg.audioUrl} className="max-w-full" style={{ height: 36 }} />
+                        </div>
+                      )}
+                      {msg.text && <p className="text-sm whitespace-pre-wrap">{msg.text}</p>}
                       <p
                         className={clsx(
                           "mt-1 text-xs",
