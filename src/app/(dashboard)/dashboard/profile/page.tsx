@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { db, storage } from "@/lib/firebase";
 import { OnboardingInfo } from "@/types";
-import { Calendar, LogOut, Sun, Moon, Camera, User, Save, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, LogOut, Sun, Moon, Camera, User, Save, ChevronDown, ChevronUp, Trash2, AlertTriangle } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import Link from "next/link";
 import clsx from "clsx";
@@ -23,13 +23,17 @@ const DAYS = [
 ];
 
 export default function ProfilePage() {
-  const { profile, isOwner, signOut } = useAuth();
+  const { profile, isOwner, signOut, deleteAccount } = useAuth();
   const [checkInDay, setCheckInDay] = useState(
     profile?.checkInDay || "Monday"
   );
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoURL, setPhotoURL] = useState(profile?.photoURL || "");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const updateCheckInDay = async (day: string) => {
     if (!profile) return;
@@ -64,6 +68,27 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     await signOut();
     window.location.href = "/";
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deletePassword.trim()) {
+      setDeleteError("Please enter your password");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      await deleteAccount(deletePassword);
+      window.location.href = "/";
+    } catch (err: any) {
+      if (err?.code === "auth/wrong-password" || err?.code === "auth/invalid-credential") {
+        setDeleteError("Incorrect password. Please try again.");
+      } else {
+        setDeleteError("Failed to delete account. Please try again.");
+      }
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -161,6 +186,55 @@ export default function ProfilePage() {
         <LogOut size={18} />
         Sign Out
       </button>
+
+      {/* Delete Account */}
+      <button
+        onClick={() => { setDeletePassword(""); setDeleteError(""); setShowDeleteModal(true); }}
+        className="flex w-full items-center justify-center gap-2 py-3 text-sm text-error/70 hover:text-error transition-colors"
+      >
+        <Trash2 size={14} />
+        Delete Account
+      </button>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-xl bg-surface p-6 space-y-4">
+            <div className="flex justify-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-error/15">
+                <AlertTriangle size={28} className="text-error" />
+              </div>
+            </div>
+            <h3 className="text-center text-lg font-bold text-text">Delete Account</h3>
+            <p className="text-center text-sm text-text-muted leading-relaxed">
+              This will permanently delete your account and all associated data including meal plans, progress photos, check-ins, and workout history. This action cannot be undone.
+            </p>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Enter your password to confirm"
+              disabled={deleting}
+              className="w-full rounded-lg border border-border bg-input-bg px-3 py-2.5 text-sm text-text placeholder:text-text-muted focus:border-primary focus:outline-none"
+            />
+            {deleteError && <p className="text-sm text-error">{deleteError}</p>}
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              className="w-full rounded-lg bg-error py-2.5 font-semibold text-white hover:bg-error/90 disabled:opacity-50 transition-all"
+            >
+              {deleting ? "Deleting..." : "Permanently Delete Account"}
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              disabled={deleting}
+              className="w-full py-2 text-sm font-medium text-text-muted hover:text-text transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -184,16 +258,14 @@ function AboutMeSection() {
     if (!profile) return;
     setSaving(true);
     try {
-      const onboarding: OnboardingInfo = {
-        mainGoal: mainGoal || undefined,
-        motivation: motivation || undefined,
-        experience: experience || undefined,
-        trainingDays: trainingDays || undefined,
-        healthConditions: healthConditions || undefined,
-        dietaryRequirements: dietaryRequirements || undefined,
-        additionalNotes: additionalNotes || undefined,
-        completedAt: Date.now(),
-      };
+      const onboarding: Record<string, any> = { completedAt: Date.now() };
+      if (mainGoal) onboarding.mainGoal = mainGoal;
+      if (motivation) onboarding.motivation = motivation;
+      if (experience) onboarding.experience = experience;
+      if (trainingDays) onboarding.trainingDays = trainingDays;
+      if (healthConditions) onboarding.healthConditions = healthConditions;
+      if (dietaryRequirements) onboarding.dietaryRequirements = dietaryRequirements;
+      if (additionalNotes) onboarding.additionalNotes = additionalNotes;
       await updateDoc(doc(db, "users", profile.uid), { onboarding });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);

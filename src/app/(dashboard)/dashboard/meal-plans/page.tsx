@@ -106,15 +106,15 @@ export default function MealPlansPage() {
     if (!selectedClient) return;
     setSaving(true);
     try {
-      const plan: MealPlan = {
+      const plan: Record<string, any> = {
         freeCalories,
         waterTargetLitres,
         meals,
-        optionalSnack: optionalSnack || undefined,
         notes: notes.filter((n) => n.trim()),
         supplements: supplements.filter((s) => s.trim()),
         updatedAt: Date.now(),
       };
+      if (optionalSnack) plan.optionalSnack = optionalSnack;
       await setDoc(
         doc(db, "users", selectedClient, "mealPlan", "current"),
         plan

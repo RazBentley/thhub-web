@@ -53,6 +53,7 @@ const coachLinks = [
   { href: "/dashboard/communities", label: "Communities", icon: Users },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
   { href: "/dashboard/subscriptions", label: "Subscriptions", icon: CreditCard },
+  { href: "/dashboard/profile", label: "Profile", icon: User },
 ];
 
 export function Sidebar({

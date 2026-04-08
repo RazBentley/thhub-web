@@ -7,8 +7,12 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
+  deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { auth, db } from "@/lib/firebase";
 import { UserProfile, UserRole } from "@/types";
 
@@ -25,6 +29,7 @@ interface AuthContextType {
     role?: UserRole
   ) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -86,6 +91,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(newProfile);
   };
 
+  const deleteAccount = async (password: string) => {
+    if (!user || !user.email) throw new Error("Not signed in");
+    const credential = EmailAuthProvider.credential(user.email, password);
+    await reauthenticateWithCredential(user, credential);
+    const functions = getFunctions();
+    const deleteUserData = httpsCallable(functions, "deleteUserAccount");
+    await deleteUserData();
+    await deleteUser(user);
+    setProfile(null);
+  };
+
   const signOut = async () => {
     await firebaseSignOut(auth);
     setProfile(null);
@@ -101,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signOut,
+        deleteAccount,
       }}
     >
       {children}
