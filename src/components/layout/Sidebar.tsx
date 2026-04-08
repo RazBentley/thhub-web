@@ -80,7 +80,8 @@ export function Sidebar({
     const unsub = onSnapshot(q, (snap) => {
       let count = 0;
       snap.forEach((d) => {
-        if ((d.data().unreadCount || 0) > 0) count++;
+        const unreadBy = d.data().unreadBy || {};
+        if ((unreadBy[profile!.uid] || 0) > 0) count++;
       });
       setUnreadChats(count);
     });
