@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
+import { db } from "@/lib/firebase";
 import clsx from "clsx";
 import {
   LayoutDashboard,
@@ -66,6 +69,23 @@ export function Sidebar({
   const { profile, isOwner, signOut } = useAuth();
   const pathname = usePathname();
   const links = isOwner ? coachLinks : clientLinks;
+  const [unreadChats, setUnreadChats] = useState(0);
+
+  useEffect(() => {
+    if (!profile) return;
+    const q = query(
+      collection(db, "chats"),
+      where("participants", "array-contains", profile.uid)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      let count = 0;
+      snap.forEach((d) => {
+        if ((d.data().unreadCount || 0) > 0) count++;
+      });
+      setUnreadChats(count);
+    });
+    return unsub;
+  }, [profile]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -142,6 +162,11 @@ export function Sidebar({
                 >
                   <link.icon size={18} />
                   {link.label}
+                  {link.label === "Messages" && unreadChats > 0 && (
+                    <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
+                      {unreadChats}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
