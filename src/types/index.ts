@@ -90,7 +90,7 @@ export interface Chat {
   clientName: string;
   lastMessage: string;
   lastMessageTime: number;
-  unreadCount: number;
+  unreadBy?: Record<string, number>;
 }
 
 export interface Message {

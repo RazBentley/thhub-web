@@ -396,9 +396,9 @@ export default function MessagesPage() {
                     {formatTime(chat.lastMessageTime)}
                   </p>
                 )}
-                {((chat as any).unreadBy?.[profile?.uid || ""] || 0) > 0 && (
+                {(chat.unreadBy?.[profile?.uid || ""] || 0) > 0 && (
                   <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-                    {(chat as any).unreadBy[profile!.uid]}
+                    {chat.unreadBy?.[profile!.uid]}
                   </span>
                 )}
               </div>
