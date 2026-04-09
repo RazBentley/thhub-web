@@ -11,6 +11,7 @@ import {
   updateDoc,
   doc,
   getDocs,
+  increment,
 } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
@@ -60,8 +61,10 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!activeChat) return;
 
-    // Clear unread count when opening a chat
-    updateDoc(doc(db, "chats", activeChat.id), { unreadCount: 0 }).catch(() => {});
+    // Clear unread count for this user when opening a chat
+    if (profile?.uid) {
+      updateDoc(doc(db, "chats", activeChat.id), { [`unreadBy.${profile.uid}`]: 0 }).catch(() => {});
+    }
 
     // Mark messages as read
     const markRead = async () => {
@@ -194,10 +197,13 @@ export default function MessagesPage() {
         timestamp: Date.now(),
         read: false,
       });
-      await updateDoc(doc(db, "chats", activeChat.id), {
+      const otherUid = activeChat.participants.find((p: string) => p !== profile.uid);
+      const chatUpdate: Record<string, any> = {
         lastMessage: newMessage.trim(),
         lastMessageTime: Date.now(),
-      });
+      };
+      if (otherUid) chatUpdate[`unreadBy.${otherUid}`] = increment(1);
+      await updateDoc(doc(db, "chats", activeChat.id), chatUpdate);
       setNewMessage("");
     } catch {
       /* silent */
@@ -394,9 +400,9 @@ export default function MessagesPage() {
                     {formatTime(chat.lastMessageTime)}
                   </p>
                 )}
-                {chat.unreadCount > 0 && (
+                {((chat as any).unreadBy?.[profile?.uid || ""] || 0) > 0 && (
                   <span className="mt-1 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-                    {chat.unreadCount}
+                    {(chat as any).unreadBy[profile!.uid]}
                   </span>
                 )}
               </div>
