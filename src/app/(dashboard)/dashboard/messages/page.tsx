@@ -11,7 +11,6 @@ import {
   updateDoc,
   doc,
   getDocs,
-  increment,
 } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
@@ -119,7 +118,7 @@ export default function MessagesPage() {
         clientName: profile.name,
         lastMessage: "",
         lastMessageTime: Date.now(),
-        unreadCount: 0,
+        unreadBy: {},
       });
       // The onSnapshot listener will pick up the new chat
     } catch {
@@ -169,7 +168,7 @@ export default function MessagesPage() {
         clientName: client.name,
         lastMessage: "",
         lastMessageTime: Date.now(),
-        unreadCount: 0,
+        unreadBy: {},
       });
       setShowNewChat(false);
       setActiveChat({
@@ -178,7 +177,7 @@ export default function MessagesPage() {
         clientName: client.name,
         lastMessage: "",
         lastMessageTime: Date.now(),
-        unreadCount: 0,
+        unreadBy: {},
       });
     } catch {
       /* silent */
@@ -197,13 +196,10 @@ export default function MessagesPage() {
         timestamp: Date.now(),
         read: false,
       });
-      const otherUid = activeChat.participants.find((p: string) => p !== profile.uid);
-      const chatUpdate: Record<string, any> = {
+      await updateDoc(doc(db, "chats", activeChat.id), {
         lastMessage: newMessage.trim(),
         lastMessageTime: Date.now(),
-      };
-      if (otherUid) chatUpdate[`unreadBy.${otherUid}`] = increment(1);
-      await updateDoc(doc(db, "chats", activeChat.id), chatUpdate);
+      });
       setNewMessage("");
     } catch {
       /* silent */
